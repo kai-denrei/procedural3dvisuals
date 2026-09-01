@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+*.log
+
+# deban decision log — local working memory, not a published artifact.
+# Remove this line only if you deliberately want the log tracked.
+.deban/
