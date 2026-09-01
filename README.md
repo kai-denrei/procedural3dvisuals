@@ -40,6 +40,21 @@ Unset params follow the registry defaults, which means a link tracks the project
 if a default is later retuned. For a frozen snapshot use **Download JSON**
 instead — that is the deliberate difference between the two.
 
+## Compute cost
+
+Every effect can be **measured on the device viewing it** — press *Measure on
+this device* in the rail. You get ms/megapixel, predicted cost at viewport /
+1024² / 512² / 256², each as a share of a 60fps frame, a verdict from *free* to
+*cinematic only*, and what halving each cost-relevant parameter actually buys.
+
+It measures rather than models because a loop-count model gets the answer
+backwards: corona (40x6 sine octaves) costs ~1.20 ms/MP while melting-jelly
+(90 march steps x 3 SDFs, plus refraction) costs ~0.06 — **19x cheaper**,
+because sphere tracing early-exits and corona's loop does not.
+
+Details and the methodology, including why an fps counter cannot see any of
+this: `src/bench.mjs` and [`docs/BOSS-ANIMATION.md`](docs/BOSS-ANIMATION.md).
+
 ## Export
 
 Every effect can be taken out of the sandbox five ways:
@@ -47,7 +62,7 @@ Every effect can be taken out of the sandbox five ways:
 | | |
 |---|---|
 | **Copy deeplink** | URL with the non-default values |
-| **Copy variables** / **Download JSON** | the values, plus credit and permalink |
+| **Copy variables** / **Download JSON** | the values, plus credit, permalink, and the measured cost if you ran one |
 | **Download .frag** | shader with `#include`s resolved and a credit header |
 | **Download standalone .html** | one self-contained file — raw WebGL2, **no three.js**, no build, no network, ~12KB. Current values baked in. Verified rendering from `file://` offline. |
 | **`s` key** | PNG of the current frame |
@@ -84,6 +99,7 @@ src/
   pwa.mjs             SW registration, update toast, fullscreen, wake lock
   permalink.mjs       deeplink encode/decode
   export.mjs          PNG / JSON / .frag / standalone .html
+  bench.mjs           per-device cost measurement (ms/megapixel)
   style.css
 embed/
   p3dv.mjs            reusable API — only dependency is three.js

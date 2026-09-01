@@ -73,30 +73,50 @@ Bonus: a `MeshBasicMaterial` map participates in the existing bloom chain, so
 the boss picks up the game's glow for free. Check `bloomweights.js` — you will
 want to give it a deliberate weight rather than inherit a default.
 
-## 3. Performance is not the problem
+## 3. Performance — measure it yourself, per device
 
-Measured on an M4 via ANGLE/Metal, ms per frame at 1280x720:
+The sandbox now has a **Compute cost** panel that measures the effect on
+whatever device is viewing it. Press "Measure on this device". It reports:
 
-| | ms | vs corona |
-|---|---|---|
-| corona, default | 0.83 | 1.0x |
-| melting-jelly, default framing | 0.21 | 0.3x |
-| melting-jelly, filling the frame | 0.25 | 0.3x |
-| melting-jelly, 512x512 | 0.11 | 0.1x |
+- **ms/megapixel** — the fundamental number, independent of resolution
+- predicted ms at viewport / 1024² / 512² / 256²
+- each as a **% of a 60fps frame**
+- a verdict, from *free* to *cinematic only*
+- **what a cut actually buys** — each cost-relevant param re-timed at half value
 
-The SDF effects are **cheaper** than the emission ones, which inverts the
-intuition. Sphere tracing early-exits — most rays hit the floor or escape in a
-few steps. Corona has no early exit: it runs 40x6 iterations for every pixel
-unconditionally.
+Measured on an M4 (ANGLE/Metal), ms per megapixel:
 
-At 512x512 in a render target, a boss effect costs well under 1% of a 16.7ms
-frame on this hardware, against a game already spending ~1022–1448 draw calls.
+| effect | ms/MP | 512² texture | verdict at 512² |
+|---|---|---|---|
+| corona | ~1.20 | 0.31 ms | free |
+| melting-jelly | ~0.06 | 0.017 ms | free |
+| metal-grid-flow | ~0.012 | 0.003 ms | free |
 
-**Caveats, stated plainly.** That is a desktop M4; it says nothing about a
-phone, and the game already halves its bloom scale on coarse pointers. The
-deltas above are near the measurement floor — reducing `uSteps` did not
-measurably help, so if frames are needed, **cut the render-target resolution,
-not the step count**. Measure on a real phone before committing.
+**Corona is ~19x more expensive per pixel than the SDF jelly**, which inverts
+the intuition — 90 march steps, 3 SDFs each, plus refraction *sounds* worse than
+40x6 sine octaves. Sphere tracing early-exits; corona's loop runs
+unconditionally for every pixel. This is why the panel measures instead of
+modelling: a loop-count estimator gets the ordering backwards.
+
+**Resolution is the lever, not step count.** Cost is linear in pixels (verified:
+0.315 / 0.335 / 0.336 ms/MP at 1024/2048/3072). Halving a render target quarters
+the cost, reliably. Halving `uSteps` saves ~69% on corona but ~27% on jelly — it
+depends on the shader, so measure rather than assume.
+
+**At 512² in a render target, every effect here is free** on this hardware —
+under 2% of a frame, against a game already spending ~1022–1448 draw calls.
+Fullscreen at dpr 2 is a different story: corona measures 6.4ms, **38% of a
+60fps frame**, which the panel calls *Heavy*.
+
+### Caveats, stated plainly
+
+- Desktop M4. **Says nothing about a phone**, which may be 10–30x slower. The
+  game already halves its bloom scale on coarse pointers. The panel runs on the
+  phone too — measure there before committing.
+- Run-to-run spread is 12–25%; the panel reports it, and refuses to call any
+  difference smaller than that spread significant.
+- Predictions below ~1MP run slightly **above** the linear estimate (fixed
+  per-draw overhead stops being negligible) — wrong in the safe direction.
 
 ## 4. Which effect actually suits the boss
 

@@ -6,6 +6,7 @@
 
 import { EFFECTS } from './registry.mjs';
 import { copyLink, copyParams, exportParamsJSON, exportFrag, exportStandaloneHTML } from './export.mjs';
+import { fullReport, BUDGET } from './bench.mjs';
 
 const fmt = (v, step) => {
   if (Number.isInteger(step) && step >= 1) return String(Math.round(v));
@@ -69,6 +70,7 @@ export function buildUI(spec, material, state, reload, ctx = {}) {
       const v = s.int ? Math.round(parseFloat(input.value)) : parseFloat(input.value);
       material.uniforms[key].value = v;
       out.textContent = fmt(v, s.step);
+      if (s.cost) ctx.onParamChange?.();   // a cost-relevant edit invalidates the measurement
     };
     controls.push(() => {
       input.value = s.def;
@@ -86,6 +88,48 @@ export function buildUI(spec, material, state, reload, ctx = {}) {
   rl.onclick = () => reload(sel.value);
 
   panel.append(el('div', { class: 'actions' }, reset, rl));
+
+  // ── compute cost ──────────────────────────────────────────────────────────
+  // Measured on this device, not modelled. See bench.mjs for why a static
+  // loop-count estimator gets the answer backwards.
+  panel.append(el('h2', { class: 'group' }, 'Compute cost'));
+  const costBox = el('div', { class: 'cost' });
+  const runBtn = el('button', {}, 'Measure on this device');
+  costBox.append(runBtn);
+  const costOut = el('div', { class: 'cost-out' });
+  costBox.append(costOut);
+  costBox.append(el('small', {},
+    'Renders off-screen and forces a GPU sync — an fps counter cannot see this (it reads 60 either way). Numbers are for THIS device; a phone will differ by an order of magnitude.'));
+  panel.append(costBox);
+
+  let lastReport = null;
+  const markStale = () => {
+    if (lastReport) costOut.classList.add('stale');
+  };
+
+  runBtn.onclick = () => {
+    runBtn.disabled = true;
+    runBtn.textContent = 'Measuring…';
+    costOut.classList.remove('stale');
+    // Yield a frame so the button repaints before the GPU work blocks.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try {
+        const r = ctx.measure();
+        lastReport = r;
+        renderCost(costOut, r);
+        runBtn.textContent = 'Re-measure';
+      } catch (err) {
+        console.error('[bench]', err);
+        costOut.innerHTML = '';
+        costOut.append(el('p', { class: 'cost-err' }, 'Measurement failed — see console.'));
+        runBtn.textContent = 'Measure on this device';
+      } finally {
+        runBtn.disabled = false;
+      }
+    }));
+  };
+  ctx.onParamChange = markStale;
+  ctx.getReport = () => lastReport;
 
   // ── export ────────────────────────────────────────────────────────────────
   panel.append(el('h2', { class: 'group' }, 'Export'));
@@ -112,9 +156,9 @@ export function buildUI(spec, material, state, reload, ctx = {}) {
     mk('Copy deeplink', 'URL with every non-default value. Short, readable, hand-editable.',
        () => copyLink(key, u)),
     mk('Copy variables', 'JSON snapshot of the current values, with credit and a permalink.',
-       () => copyParams(key, u)),
+       () => copyParams(key, u, ctx.getReport?.())),
     mk('Download JSON', 'Same snapshot as a file. Frozen — unlike a deeplink, it will not follow future default changes.',
-       () => { exportParamsJSON(key, u); }),
+       () => { exportParamsJSON(key, u, ctx.getReport?.()); }),
     mk('Download .frag', 'Shader with #includes resolved and a credit header. Paste into any GLSL host.',
        () => { exportFrag(key, ctx.source ?? material.userData.sourceForErrors ?? ''); }),
     mk('Download standalone .html', 'One self-contained file: raw WebGL2, no three.js, no build, no network. Current values baked in.',
@@ -156,4 +200,57 @@ function row(label, input, out, help) {
   r.append(line);
   if (help) r.append(el('small', {}, help));
   return r;
+}
+
+
+// ── cost report rendering ───────────────────────────────────────────────────
+const ms = (v) => (v < 0.01 ? '<0.01' : v.toFixed(2));
+
+function renderCost(host, r) {
+  host.innerHTML = '';
+
+  const v = el('p', { class: `verdict v-${r.verdict.level}` }, r.verdict.text);
+  host.append(v);
+
+  const t = el('table', { class: 'cost-table' });
+  t.append(el('tr', {},
+    el('th', {}, 'target'), el('th', {}, 'ms'), el('th', {}, '% of 60fps frame')));
+  for (const row of r.resolutions) {
+    const bar = el('div', { class: 'bar' });
+    const fill = el('div', { class: 'bar-fill' });
+    fill.style.width = Math.min(100, row.pct60).toFixed(1) + '%';
+    if (row.pct60 >= 50) fill.style.background = 'var(--err)';
+    else if (row.pct60 >= 20) fill.style.background = 'var(--warn)';
+    bar.append(fill);
+    t.append(el('tr', {},
+      el('td', {}, `${row.key === 'native' ? 'viewport' : row.key + '²'}`),
+      el('td', { class: 'num' }, ms(row.ms)),
+      el('td', {}, bar, el('span', { class: 'num pct' }, row.pct60.toFixed(1) + '%'))));
+  }
+  host.append(t);
+
+  if (r.sensitivity.params.length) {
+    host.append(el('h3', { class: 'sub' }, `What a cut buys (measured at ${r.sensitivity.size}²)`));
+    const list = el('ul', { class: 'sens' });
+    for (const p of r.sensitivity.params) {
+      const sign = p.direction === 'cheaper'  ? `saves ${p.savedPct.toFixed(0)}%`
+                 : p.direction === 'costlier' ? `costs ${Math.abs(p.savedPct).toFixed(0)}% more`
+                 : 'within noise';
+      const cls = p.direction === 'cheaper' ? 'good' : p.direction === 'costlier' ? 'bad' : 'none';
+      list.append(el('li', {},
+        el('span', { class: 'sens-k' }, `${p.label} ${p.from} → ${p.to}`),
+        el('span', { class: 'sens-v ' + cls }, sign)));
+    }
+    host.append(list);
+    host.append(el('small', {},
+      `Anything under ±${r.sensitivity.floorPct.toFixed(0)}% is inside this run's own variation and is reported as noise. `
+      + 'If nothing here is significant, the effect is resolution-bound rather than iteration-bound — cut the render target size instead.'));
+  }
+
+  host.append(el('p', { class: 'device' },
+    `${r.device.renderer} · dpr ${r.device.dpr}`,
+    el('br'),
+    `calibrated at ${r.calibration.size}² → ${r.calibration.msPerMP.toFixed(3)} ms/megapixel `
+    + `(±${r.calibration.spreadPct.toFixed(0)}%). Smaller targets are predicted from that and `
+    + `run slightly ABOVE the prediction, never below.`));
 }

@@ -70,7 +70,7 @@ export function exportPNG(renderer, scene, camera, effectName) {
 }
 
 // ── 2. Variables ────────────────────────────────────────────────────────────
-export function paramsDocument(effectName, uniforms) {
+export function paramsDocument(effectName, uniforms, cost = null) {
   const spec = EFFECTS[effectName];
   return {
     effect: effectName,
@@ -80,18 +80,22 @@ export function paramsDocument(effectName, uniforms) {
     exported: new Date().toISOString(),
     permalink: encodeState(effectName, uniforms),
     params: paramValues(effectName, uniforms),
+    // Present only if the cost was measured this session. A params file that
+    // records what it cost on a real device is worth far more to a game
+    // integration decision than one that does not.
+    cost: cost ?? undefined,
   };
 }
 
-export function exportParamsJSON(effectName, uniforms) {
-  const doc = paramsDocument(effectName, uniforms);
+export function exportParamsJSON(effectName, uniforms, cost = null) {
+  const doc = paramsDocument(effectName, uniforms, cost);
   download(`${effectName}-params-${stamp()}.json`,
            new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }));
   return doc;
 }
 
-export const copyParams = (effectName, uniforms) =>
-  copyText(JSON.stringify(paramsDocument(effectName, uniforms), null, 2));
+export const copyParams = (effectName, uniforms, cost = null) =>
+  copyText(JSON.stringify(paramsDocument(effectName, uniforms, cost), null, 2));
 
 export const copyLink = (effectName, uniforms) =>
   copyText(encodeState(effectName, uniforms));

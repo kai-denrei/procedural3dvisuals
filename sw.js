@@ -12,7 +12,7 @@
 // on user consent. (cache-busting's reference offers this as its alternative.)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CB_TOKEN = "f51438b1";
+const CB_TOKEN = "31a5e9d5";
 const CACHE = `p3dv-${CB_TOKEN}`;
 
 // Everything needed to boot offline. three.module.js is 1.2MB and dominates
@@ -37,6 +37,7 @@ const SHELL = [
   './src/pwa.mjs',
   './src/permalink.mjs',
   './src/export.mjs',
+  './src/bench.mjs',
 
   './vendor/three.module.js',
 

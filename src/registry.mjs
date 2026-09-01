@@ -13,10 +13,16 @@
 const P = (def, min, max, step, label, help) => ({ def, min, max, step, label, help });
 const I = (def, min, max, label, help) => ({ def, min, max, step: 1, int: true, label, help });
 
+// Mark a param as cost-relevant. `bench.mjs` re-times the effect with each of
+// these halved to report what a cut actually buys — measured, not assumed.
+// Only flag things that change the AMOUNT of work (loop bounds, march limits),
+// not things that change what the work produces.
+const costly = (schema) => ({ ...schema, cost: true });
+
 /** Params shared by both effects — the raymarch + turbulence + tonemap core. */
 const CORE = {
-  uSteps:       I(40, 4, 160, 'March steps', 'Ray samples. Cost is linear; detail saturates ~64.'),
-  uTurbOctaves: I(6, 1, 12, 'Turb octaves', 'Sine folds per step. Total cost = steps x octaves.'),
+  uSteps:       costly(I(40, 4, 160, 'March steps', 'Ray samples. Cost is linear; detail saturates ~64.')),
+  uTurbOctaves: costly(I(6, 1, 12, 'Turb octaves', 'Sine folds per step. Total cost = steps x octaves.')),
   uTurbAmp:     P(1.0, 0.0, 3.0, 0.01, 'Turb amount', 'Warp strength. 0 = clean geometry, no plasma.'),
   uTurbFreq:    P(2.0, 0.25, 8.0, 0.05, 'Turb base freq', 'Starting frequency; doubles each octave.'),
   uStepScale:   P(1.0 / 3.0, 0.05, 1.0, 0.005, 'Step scale', 'March damping. Lower = slower, more accurate, brighter.'),
@@ -96,9 +102,9 @@ export const EFFECTS = {
       uAbsorb:       P(4.5, 0.0, 15.0, 0.05, 'Absorption', "Beer's law strength. Higher = denser, more saturated body."),
       uFresnelPow:   P(5.0, 0.5, 12.0, 0.05, 'Fresnel power', 'Rim tightness. Lower spreads the sheen across the whole surface.'),
       uReflect:      P(0.6, 0.0, 1.0, 0.005, 'Reflectivity', 'How much floor reflection mixes in at the rim.'),
-      uSteps:        I(90, 8, 160, 'March steps', 'Primary march. Each step evaluates 3 SDFs — this is the dominant cost.'),
-      uRefractSteps: I(30, 2, 60, 'Refraction steps', 'Inside-surface march. Drop first if you need frames back; it degrades gracefully.'),
-      uFar:          P(30.0, 5.0, 80.0, 0.5, 'Far distance', 'Ray give-up distance.'),
+      uSteps:        costly(I(90, 8, 160, 'March steps', 'Primary march. Each step evaluates 3 SDFs — this is the dominant cost.')),
+      uRefractSteps: costly(I(30, 2, 60, 'Refraction steps', 'Inside-surface march. Drop first if you need frames back; it degrades gracefully.')),
+      uFar:          costly(P(30.0, 5.0, 80.0, 0.5, 'Far distance', 'Ray give-up distance.')),
       uCamDist:      P(11.0, 3.0, 30.0, 0.05, 'Camera distance', ''),
       uCamPitch:     P(0.45, 0.0, 1.0, 0.005, 'Camera pitch', '0 = horizon, 1 = top-down.'),
       uAutoRotate:   P(0.3, -2.0, 2.0, 0.005, 'Auto-rotate', 'Radians per second. 0 holds still for a fixed camera.'),
@@ -121,7 +127,7 @@ export const EFFECTS = {
       note: 'Structure and constants unchanged; parameterised and adapted to this uniform contract.',
     },
     params: {
-      uIterations:  I(4, 1, 8, 'Iterations', 'Channels are written for the first 3. The 4th still advances z and l, which the final divide uses — see the shader header.'),
+      uIterations:  costly(I(4, 1, 8, 'Iterations', 'Channels are written for the first 3. The 4th still advances z and l, which the final divide uses — see the shader header.')),
       uZSpeed:      P(1.0, -4.0, 4.0, 0.01, 'Time scale', 'Overall animation rate. Negative runs the sheen backwards.'),
       uZStep:       P(0.05, 0.0, 0.6, 0.001, 'Channel offset', 'Time offset per colour channel. THIS is the iridescence — at 0 the foil turns monochrome.'),
       uGridFreq:    P(30.0, 2.0, 90.0, 0.5, 'Grid frequency', 'Cell density of the sin*cos lattice.'),

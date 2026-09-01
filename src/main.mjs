@@ -10,6 +10,7 @@ import { bustToken } from './shader-loader.mjs';
 import { registerSW, initFullscreen, initImmersive, initWakeLock, initInstall, standalone } from './pwa.mjs';
 import { decodeState, applyParams, syncURL } from './permalink.mjs';
 import { exportPNG } from './export.mjs';
+import { fullReport } from './bench.mjs';
 
 const canvas = document.getElementById('gl');
 
@@ -30,6 +31,7 @@ const geometry = fullscreenTriangle();
 
 let mesh = null;
 let current = null;                          // { material, spec }
+let uiCtx = null;
 const bootState = decodeState();
 let effectName = bootState.effectName ?? DEFAULT_EFFECT;
 // Param overrides from the URL apply to the FIRST load only. Switching effects
@@ -65,10 +67,17 @@ async function load(name) {
     const applied = applyParams(built.material.uniforms, pendingParams);
     pendingParams = {};                       // first load only
 
-    buildUI(built.spec, built.material, state, load, {
+    uiCtx = {
       effectName: name,
       source: built.material.userData.sourceForErrors,
-    });
+      // Measured against the LIVE renderer at the real drawing-buffer size, so
+      // "viewport" means this window on this device, not a nominal number.
+      measure() {
+        const b = renderer.getDrawingBufferSize(new THREE.Vector2());
+        return fullReport(renderer, built.material, name, b.x, b.y);
+      },
+    };
+    buildUI(built.spec, built.material, state, load, uiCtx);
     document.getElementById('note').textContent = built.spec.note;
     status.textContent = `${built.spec.label} · v${bustToken()}`;
     status.className = 'ok';
@@ -170,4 +179,5 @@ if (standalone()) document.body.classList.add('installed');
 load(effectName).then(() => requestAnimationFrame(frame));
 
 // Exposed for console poking and for the reload button.
-window.fx = { load, state, get current() { return current; }, renderer, THREE };
+window.fx = { load, state, get current() { return current; }, renderer, THREE,
+              measure: () => uiCtx?.measure(), get report() { return uiCtx?.getReport?.(); } };
