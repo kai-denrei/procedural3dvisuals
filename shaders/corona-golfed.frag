@@ -1,4 +1,5 @@
 #include "common.glsl"
+#include "xor-dialect.glsl"
 // Near-verbatim transcription of the original golfed listing, using the
 // dialect aliases in common.glsl. Kept as a live check that the aliases are
 // faithful: this and corona.frag at default params must render identically.

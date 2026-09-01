@@ -21,21 +21,12 @@ uniform float uTimeScale;
 #define PI   3.14159265359
 #define TAU  6.28318530718
 
-// ── Xor / fragcoord.xyz dialect ─────────────────────────────────────────────
-// Aliases so golfed source from fragcoord.xyz pastes in near-verbatim.
-// Use these when transcribing; use the long forms when writing new code.
-//
-// CAUTION: these are preprocessor text substitutions, not scoped names. Any
-// identifier called `f`, `len` or `nor` — including a function PARAMETER — gets
-// rewritten. `vec3 hash3f(vec3 f)` becomes `vec3 hash3f(vec3 float)` and fails
-// to compile with a syntax error pointing at the wrong token. This has already
-// cost one debugging session; see shaders/motion-cube.frag.
-#define f   float
-#define f2  vec2
-#define f3  vec3
-#define f4  vec4
-#define len length
-#define nor normalize
+// ── Uppercase conveniences ──────────────────────────────────────────────────
+// T and R only. The lowercase dialect aliases (f, f2, f3, f4, len, nor) now
+// live in xor-dialect.glsl and are included ONLY by files transcribing golfed
+// source — they are preprocessor substitutions with no scope, so having them
+// project-wide made every identifier named `f` a compile error waiting to
+// happen. It happened twice. See xor-dialect.glsl.
 #define T   (uTime * uTimeScale)
 #define R   uResolution
 
