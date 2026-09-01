@@ -8,7 +8,9 @@ Effects: a replication of XorDev's **Coronal**, a **wormhole / portal travel**
 effect derived from the same technique, **Metal Grid Flow** (iridescent foil,
 after *harsh* and *koncreate*), **Melting Jelly** (SDF raymarching with
 refraction, after *noztol*), **Motion Cube** (a cube unfolding into its net,
-after *Jaenam*), and **SDF Primitives** (12 morphable primitives, original).
+after *Jaenam*), **SDF Primitives** (12 morphable primitives), and
+**Motion Solids** (polyhedra unfolding into their nets — pyramid, tetrahedron,
+cube, octahedron, dodecahedron, hex prism).
 
 > **Licences differ per effect.** Motion Cube is **CC BY-NC-SA 4.0** —
 > non-commercial only, share-alike. SDF Primitives is original and
@@ -120,6 +122,7 @@ shaders/
   melting-jelly.frag    SDF raymarch + refraction (attributed)
   motion-cube.frag      unfolding cube (attributed — CC BY-NC-SA 4.0)
   sdf-primitives.frag   12 primitives, morph + open (original, unencumbered)
+  motion-solids.frag    polyhedra unfolding into their nets (original)
 docs/PORTING.md       how to move an effect into the r160 target project
 docs/BOSS-ANIMATION.md  assessment: reusing these in spherical-stalberg-grid
 ATTRIBUTIONS.md       credit for borrowed work
