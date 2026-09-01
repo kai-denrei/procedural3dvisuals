@@ -13,7 +13,7 @@
      display:standalone is not cosmetic here: it removes Safari's edge-swipe
      back/forward navigation, which is the one "native touch that switches the
      screen" that CSS touch-action cannot suppress. -->
-<link rel="manifest" href="./manifest.webmanifest?v=31a5e9d5">
+<link rel="manifest" href="./manifest.webmanifest?v=d1d3938e">
 <meta name="theme-color" content="#07080a">
 <meta name="color-scheme" content="dark">
 
@@ -21,22 +21,27 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Visuals">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png?v=31a5e9d5">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png?v=d1d3938e">
 
-<link rel="stylesheet" href="./src/style.css?v=31a5e9d5">
+<link rel="stylesheet" href="./src/style.css?v=d1d3938e">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="31a5e9d5">
-  <link rel="icon" type="image/svg+xml" href="./public/cb-shapes/49.svg?v=31a5e9d5">
-  <script src="./public/cb-badge.js?v=31a5e9d5" defer></script>
+  <meta name="cb" content="d1d3938e">
+  <link rel="icon" type="image/svg+xml" href="./public/cb-shapes/17.svg?v=d1d3938e">
+  <script src="./public/cb-badge.js?v=d1d3938e" defer></script>
 </head>
 <body>
 
 <canvas id="gl"></canvas>
 
-<aside id="rail">
+<div id="scrim" hidden></div>
+
+<aside id="rail" role="dialog" aria-modal="false" aria-label="Effect controls">
   <header>
+    <button id="btn-close" aria-label="Close controls" title="Close (Esc)">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+    </button>
     <h1>Procedural&nbsp;Visuals</h1>
     <div class="meta">
       <span id="status" class="busy">booting…</span>
@@ -51,8 +56,10 @@
 </aside>
 
 <div id="fab">
-  <button id="btn-ui" aria-pressed="false" aria-label="Hide controls" title="Hide controls (h)">
+  <button id="btn-ui" aria-pressed="false" aria-expanded="false" aria-controls="rail"
+          aria-label="Show controls" title="Controls (h)">
     <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+    <span class="fab-label">Controls</span>
   </button>
   <button id="btn-fs" aria-pressed="false" aria-label="Fullscreen" title="Fullscreen (f)">
     <svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" stroke-linecap="round"/></svg>
@@ -65,6 +72,6 @@
   <button id="toast-dismiss" class="dismiss">Later</button>
 </div>
 
-<script type="module" src="./src/main.mjs?v=31a5e9d5"></script>
+<script type="module" src="./src/main.mjs?v=d1d3938e"></script>
 </body>
 </html>

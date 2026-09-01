@@ -222,7 +222,11 @@ button:active { transform: translateY(1px); }
   bottom: max(14px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 10px;
 }
+/* The container is layout only — it must never swallow a tap aimed at the
+   canvas behind it, or at a button whose pointer-events are off. */
+#fab { pointer-events: none; }
 #fab button {
+  pointer-events: auto;
   width: 46px; height: 46px;         /* >= 44px: Apple HIG minimum target */
   padding: 0; flex: none;
   display: grid; place-items: center;
@@ -499,3 +503,91 @@ ul.sens li {
 .cost-err { color: var(--err); font-size: 11px; }
 @media (pointer: coarse) { .cost > button { min-height: 46px; } }
 .sens-v.bad { color: var(--warn); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTROLS AS A MODAL (narrow screens)
+   The panel used to open by default over 62% of a phone screen, with the only
+   exit an unlabelled circle floating in the artwork. Now: closed by default,
+   and dismissible via the ×, the scrim, a downward swipe, or Escape.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#scrim {
+  position: fixed; inset: 0; z-index: 9;
+  background: rgba(4, 5, 7, 0.55);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 0.28s ease;
+  touch-action: none;
+}
+#scrim.on { opacity: 1; }
+#scrim[hidden] { display: none; }
+
+/* Close button — lives in the sheet, where "close this" belongs. */
+#btn-close {
+  position: absolute; top: 12px; right: 14px;
+  width: 40px; height: 40px; padding: 0; flex: none;
+  display: none; place-items: center;
+  background: transparent; border: 1px solid var(--line); border-radius: 50%;
+  color: var(--ink-dim); touch-action: manipulation;
+}
+#btn-close svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+#btn-close:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+/* The opener carries a word on touch. An anonymous circle in the middle of the
+   frame reads as decoration, not as the way back to the controls. */
+.fab-label { display: none; }
+
+@media (max-width: 720px) {
+  #rail { z-index: 20; }                 /* above the scrim */
+  #btn-close { display: grid; }
+  #rail header { padding-right: 62px; }  /* clear of the × */
+
+  /* The sheet's chrome (handle + header) is the drag surface. #panel keeps
+     pan-y so the controls still scroll. */
+  #rail { touch-action: none; }
+  #rail header { cursor: grab; }
+  #rail header:active { cursor: grabbing; }
+  /* Make the handle a real target, not a 4px line: the ::before is 4px tall but
+     the top ~26px of the sheet is all drag surface. */
+  #rail::before { height: 4px; }
+
+  /* Opener becomes a labelled pill, anchored bottom-right.
+     Selector must out-specify `#fab button` above, which sets width:46px. */
+  #fab { flex-direction: row; align-items: center; }
+  #fab button#btn-ui {
+    width: auto; height: 46px; padding: 0 16px 0 13px;
+    border-radius: 23px; gap: 8px;
+    grid-auto-flow: column; place-items: center;
+    background: rgba(14, 16, 20, 0.88);
+    color: var(--ink);
+  }
+  .fab-label {
+    display: inline; font-size: 12.5px; font-weight: 500; letter-spacing: 0.01em;
+  }
+  /* While the sheet is open the pill is redundant — the × and the scrim are
+     both closer to hand. Hide it rather than stack two ways to do one thing. */
+  body:not(.hide-ui) #btn-ui { opacity: 0; pointer-events: none; }
+
+  /* The sheet no longer needs to sit under a floating button column. */
+  #fab { bottom: max(14px, env(safe-area-inset-bottom)); }
+  body:not(.hide-ui) #fab { bottom: max(14px, env(safe-area-inset-bottom)); }
+  #toast, body.hide-ui #toast { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  #cb-badge, body.hide-ui #cb-badge {
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    left: max(12px, env(safe-area-inset-left)) !important; right: auto !important;
+  }
+
+  /* A touch taller now that it opens on request rather than by default. */
+  #rail { height: min(72dvh, 680px); }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  #btn-close { display: grid; }
+  #rail header { padding-right: 62px; }
+}
+
+@media (max-width: 720px) {
+  /* While the sheet is open the badge would sit on the footer text, and the
+     token is already shown next to the effect name in the header. */
+  body:not(.hide-ui) #cb-badge { opacity: 0; pointer-events: none; }
+  #cb-badge { transition: opacity 0.2s; }
+}

@@ -99,35 +99,116 @@ export const standalone = () =>
   || matchMedia('(display-mode: fullscreen)').matches
   || navigator.standalone === true;          // iOS-only fallback
 
-// ── Immersive toggle (hide UI) ──────────────────────────────────────────────
+// ── Controls panel ──────────────────────────────────────────────────────────
+// On a phone this is a MODAL: closed by default, dismissible four ways, so the
+// effect can be evaluated fullscreen. On desktop it is a persistent side rail,
+// where a 320px column costs nothing and hiding it is an occasional wish.
+//
+// It used to open by default on mobile too, covering 62% of the screen, with
+// the only exit a small unlabelled circle floating in the middle of the
+// artwork. That toggle worked; nobody could tell it was a close button.
 export function initImmersive() {
   const btn = $('btn-ui');
+  const close = $('btn-close');
+  const scrim = $('scrim');
+  const rail = $('rail');
   const fab = $('fab');
 
-  function set(hidden) {
+  // "Modal" applies where the panel would cover the artwork. Above this width
+  // the rail sits beside the canvas and never occludes it.
+  const isModal = () => matchMedia('(max-width: 720px)').matches;
+
+  function set(hidden, { persist = true } = {}) {
     document.body.classList.toggle('hide-ui', hidden);
     btn.setAttribute('aria-pressed', String(hidden));
-    btn.title = hidden ? 'Show controls (h)' : 'Hide controls (h)';
+    btn.setAttribute('aria-expanded', String(!hidden));
     btn.setAttribute('aria-label', hidden ? 'Show controls' : 'Hide controls');
-    try { localStorage.setItem('p3dv.hideUI', hidden ? '1' : '0'); } catch { /* private mode */ }
+    btn.title = hidden ? 'Controls (h)' : 'Hide controls (h)';
+    rail.setAttribute('aria-modal', String(isModal() && !hidden));
+    // `hidden` rather than display, so the scrim can transition.
+    if (isModal() && !hidden) scrim.hidden = false;
+    else if (hidden) setTimeout(() => { scrim.hidden = true; }, 280);
+    requestAnimationFrame(() => scrim.classList.toggle('on', isModal() && !hidden));
+    // A modal's open/closed state is not a preference worth remembering — it
+    // should always start closed. The desktop rail's IS.
+    if (persist && !isModal()) {
+      try { localStorage.setItem('p3dv.hideUI', hidden ? '1' : '0'); } catch { /* private mode */ }
+    }
   }
 
-  btn.addEventListener('click', () => set(!document.body.classList.contains('hide-ui')));
+  const toggle = () => set(!document.body.classList.contains('hide-ui'));
+  const dismiss = () => set(true);
 
-  // While immersive the FAB dims into the artwork. Any touch near it wakes it
-  // for a few seconds so it never becomes unreachable.
+  btn.addEventListener('click', toggle);
+  close.addEventListener('click', dismiss);
+  scrim.addEventListener('click', dismiss);            // tap anywhere off the sheet
+  addEventListener('keydown', (e) => {                 // Escape
+    if (e.key === 'Escape' && !document.body.classList.contains('hide-ui')) dismiss();
+  });
+
+  // Swipe the sheet down to dismiss — the gesture a bottom sheet implies.
+  //
+  // Bound to the RAIL, not to its <header>. The visible grab handle is
+  // `#rail::before`, and a pseudo-element belongs to its host — so a drag that
+  // starts on the handle targets #rail and never reaches a listener on the
+  // header. That is the one place a user is most likely to grab, and it was
+  // the only place the gesture did nothing.
+  //
+  // Drags starting inside #panel are excluded so scrolling the controls, and
+  // dragging a slider, never dismiss the sheet.
+  const header = rail;
+  const fromPanel = (e) => e.target.closest('#panel') || e.target.closest('button');
+  let startY = null, lastDy = 0, dragging = false;
+  header.addEventListener('pointerdown', (e) => {
+    if (!isModal() || fromPanel(e)) return;
+    startY = e.clientY; lastDy = 0; dragging = true;
+    rail.style.transition = 'none';
+    header.setPointerCapture?.(e.pointerId);
+  });
+  header.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    lastDy = Math.max(0, e.clientY - startY);          // remember it HERE:
+    rail.style.transform = `translateY(${lastDy}px)`;  // pointerup/cancel does
+  });                                                  // not reliably carry a
+  const endDrag = (e) => {                             // position on touch end
+    if (!dragging) return;
+    dragging = false;
+    // Release the capture taken in pointerdown. Leaving it held means the next
+    // gesture on this element is delivered to a stale capture target, so the
+    // second and later swipes silently do nothing.
+    if (e && header.hasPointerCapture?.(e.pointerId)) header.releasePointerCapture(e.pointerId);
+    rail.style.transition = '';
+    rail.style.transform = '';
+    if (lastDy > 60) dismiss();                        // far enough = intent
+    lastDy = 0;
+  };
+  header.addEventListener('pointerup', endDrag);
+  header.addEventListener('pointercancel', endDrag);
+  header.addEventListener('lostpointercapture', () => { dragging = false; });
+
+  // While immersive the opener dims into the artwork. Any touch wakes it for a
+  // few seconds so it never becomes unfindable.
   let wakeTimer;
-  const wake = () => {
+  addEventListener('pointerdown', () => {
     fab.classList.add('awake');
     clearTimeout(wakeTimer);
     wakeTimer = setTimeout(() => fab.classList.remove('awake'), 2600);
-  };
-  addEventListener('pointerdown', wake, { passive: true });
+  }, { passive: true });
 
-  let initial = false;
-  try { initial = localStorage.getItem('p3dv.hideUI') === '1'; } catch { /* ignore */ }
-  set(initial);
-  return { set, toggle: () => set(!document.body.classList.contains('hide-ui')) };
+  // Start closed on mobile, always. Honour the stored preference on desktop.
+  let initial = true;
+  if (!isModal()) {
+    try { initial = localStorage.getItem('p3dv.hideUI') === '1'; } catch { initial = false; }
+  }
+  set(initial, { persist: false });
+
+  // Crossing the breakpoint changes the rules: a rail that was open on desktop
+  // must not become a modal that is already covering the artwork.
+  matchMedia('(max-width: 720px)').addEventListener('change', (e) => {
+    if (e.matches) set(true, { persist: false });
+  });
+
+  return { set, toggle, dismiss };
 }
 
 // ── Wake lock ───────────────────────────────────────────────────────────────
