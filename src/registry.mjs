@@ -76,6 +76,38 @@ export const EFFECTS = {
     },
   },
 
+  'melting-jelly': {
+    label: 'Melting Jelly',
+    note: 'SDF raymarch with refraction. smin() blends cube → puddle; the blend WIDTH growing is the melt.',
+    frag: 'shaders/melting-jelly.frag',
+    credit: {
+      origin: 'noztol — "Melting Jello"',
+      via: [{ label: 'fragcoord.xyz/s/m78o8vry', url: 'https://fragcoord.xyz/s/m78o8vry' }],
+      note: 'SDF structure, smin blend and refraction shading are noztol\'s; parameterised here, plus a manual melt drive.',
+    },
+    params: {
+      uMeltAuto:     P(1.0, 0.0, 1.0, 1.0, 'Auto melt', 'ON oscillates with time. OFF hands control to the Melt slider — that is the hook for driving this from game state (boss HP, a timeline).'),
+      uMelt:         P(0.35, 0.0, 1.0, 0.005, 'Melt', '0 solid, 1 puddle. Only used when Auto melt is OFF.'),
+      uMeltSpeed:    P(1.5, 0.05, 6.0, 0.01, 'Melt speed', 'Oscillation rate when Auto melt is ON.'),
+      uSpread:       P(2.2, 0.0, 6.0, 0.02, 'Spread', 'Distance of the three blobs from centre. At 0 they fuse into one mass.'),
+      uScale:        P(1.0, 0.2, 3.0, 0.01, 'Scale', 'Overall blob size.'),
+      uHueShift:     P(0.0, 0.0, 6.283, 0.01, 'Hue shift', 'Rotates all three colours together.'),
+      uIOR:          P(1.31, 1.0, 2.4, 0.005, 'Index of refraction', '1.0 = no bending (looks like coloured fog). 1.31 is ice; 1.5 is glass.'),
+      uAbsorb:       P(4.5, 0.0, 15.0, 0.05, 'Absorption', "Beer's law strength. Higher = denser, more saturated body."),
+      uFresnelPow:   P(5.0, 0.5, 12.0, 0.05, 'Fresnel power', 'Rim tightness. Lower spreads the sheen across the whole surface.'),
+      uReflect:      P(0.6, 0.0, 1.0, 0.005, 'Reflectivity', 'How much floor reflection mixes in at the rim.'),
+      uSteps:        I(90, 8, 160, 'March steps', 'Primary march. Each step evaluates 3 SDFs — this is the dominant cost.'),
+      uRefractSteps: I(30, 2, 60, 'Refraction steps', 'Inside-surface march. Drop first if you need frames back; it degrades gracefully.'),
+      uFar:          P(30.0, 5.0, 80.0, 0.5, 'Far distance', 'Ray give-up distance.'),
+      uCamDist:      P(11.0, 3.0, 30.0, 0.05, 'Camera distance', ''),
+      uCamPitch:     P(0.45, 0.0, 1.0, 0.005, 'Camera pitch', '0 = horizon, 1 = top-down.'),
+      uAutoRotate:   P(0.3, -2.0, 2.0, 0.005, 'Auto-rotate', 'Radians per second. 0 holds still for a fixed camera.'),
+      uFov:          P(1.5, 0.5, 4.0, 0.01, 'FOV', 'Larger = narrower, less perspective distortion.'),
+      uFloorScale:   P(1.5, 0.1, 6.0, 0.01, 'Floor checker', 'Checkerboard frequency.'),
+      uFog:          P(0.015, 0.0, 0.15, 0.001, 'Fog', 'Distance fog on the floor.'),
+    },
+  },
+
   'metal-grid-flow': {
     label: 'Metal Grid Flow',
     note: 'Iridescent foil: 2D grid + radial wave + polar sweep. No raymarch.',

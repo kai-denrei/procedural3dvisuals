@@ -16,6 +16,16 @@ await credits({ effect: 'metal-grid-flow' });
 
 ---
 
+## Melting Jelly
+
+- **Original:** *noztol* — "Melting Jello" — <https://fragcoord.xyz/s/m78o8vry>
+- **This version:** parameterised onto this project's uniform contract. The SDF
+  structure, the `smin` cube→puddle blend, and the Fresnel / refraction /
+  Beer's-law shading are noztol's, unchanged.
+- **Added here:** a manual `uMelt` drive (`uMeltAuto = 0`), so the melt can be
+  driven by external state — a health bar, a timeline — rather than a clock.
+  No published licence was stated on the source page.
+
 ## Metal Grid Flow
 
 - **Original:** *harsh* — <https://www.shadertoy.com/view/dtKfDD>

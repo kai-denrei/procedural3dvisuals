@@ -12,7 +12,7 @@
 // on user consent. (cache-busting's reference offers this as its alternative.)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CB_TOKEN = "6707ec54";
+const CB_TOKEN = "f51438b1";
 const CACHE = `p3dv-${CB_TOKEN}`;
 
 // Everything needed to boot offline. three.module.js is 1.2MB and dominates
@@ -46,6 +46,7 @@ const SHELL = [
   `./shaders/corona-golfed.frag?v=${CB_TOKEN}`,
   `./shaders/wormhole.frag?v=${CB_TOKEN}`,
   `./shaders/metal-grid-flow.frag?v=${CB_TOKEN}`,
+  `./shaders/melting-jelly.frag?v=${CB_TOKEN}`,
 
   `./public/cb-badge.js?v=${CB_TOKEN}`,
   './icons/icon-192.png',

@@ -5,8 +5,9 @@ sine domain-warping, and singularity-driven emission — built to author effects
 drop into a **three.js r160, no-build, vanilla ES modules** project.
 
 Effects: a replication of XorDev's **Coronal**, a **wormhole / portal travel**
-effect derived from the same technique, and **Metal Grid Flow**, an iridescent
-foil adapted from work by *harsh* and *koncreate* (see `ATTRIBUTIONS.md`).
+effect derived from the same technique, **Metal Grid Flow** (an iridescent foil,
+after *harsh* and *koncreate*), and **Melting Jelly** (SDF raymarching with
+refraction, after *noztol*). See `ATTRIBUTIONS.md`.
 
 ## Run
 
@@ -93,8 +94,10 @@ shaders/
   corona.frag         un-golfed Coronal, heavily annotated
   corona-golfed.frag  verbatim dialect transcription — a live check on the aliases
   wormhole.frag       portal travel
-  metal-grid-flow.frag  iridescent foil (attributed — see ATTRIBUTIONS.md)
+  metal-grid-flow.frag  iridescent foil (attributed)
+  melting-jelly.frag    SDF raymarch + refraction (attributed)
 docs/PORTING.md       how to move an effect into the r160 target project
+docs/BOSS-ANIMATION.md  assessment: reusing these in spherical-stalberg-grid
 ATTRIBUTIONS.md       credit for borrowed work
 sw.js                 service worker; cache keyed to the bust token
 manifest.webmanifest  PWA manifest (standalone, shortcuts per effect)
