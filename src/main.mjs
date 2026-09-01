@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { EFFECTS, DEFAULT_EFFECT } from './registry.mjs';
-import { buildEffect, fullscreenTriangle, explainCompileError } from './effect.mjs';
+import { buildEffect, fullscreenTriangle, explainCompileError, assertLinked } from './effect.mjs';
 import { buildUI } from './ui.mjs';
 import { bustToken } from './shader-loader.mjs';
 import { registerSW, initFullscreen, initImmersive, initWakeLock, initInstall, standalone } from './pwa.mjs';
@@ -63,6 +63,7 @@ async function load(name) {
 
     resize();
     renderer.compile(scene, camera);         // surface compile errors now, not on frame 1
+    assertLinked(renderer, built.material);  // …and actually fail if it did not link
 
     const applied = applyParams(built.material.uniforms, pendingParams);
     pendingParams = {};                       // first load only

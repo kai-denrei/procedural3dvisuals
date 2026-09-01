@@ -28,6 +28,14 @@ export function buildUI(spec, material, state, reload, ctx = {}) {
       box.append(el('a', { href: v.url, target: '_blank', rel: 'noopener noreferrer' }, v.label));
     }
     if (spec.credit.note) box.append(el('small', {}, spec.credit.note));
+    const lic = spec.credit.license;
+    if (lic) {
+      const l = el('div', { class: 'credit-lic' });
+      l.append(el('a', { href: lic.url, target: '_blank', rel: 'noopener noreferrer' }, lic.id));
+      if (lic.warn) l.append(el('span', {}, lic.warn));
+      box.append(l);
+      box.classList.add('has-license');
+    }
     panel.append(box);
   }
 

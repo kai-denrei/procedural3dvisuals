@@ -591,3 +591,18 @@ ul.sens li {
   body:not(.hide-ui) #cb-badge { opacity: 0; pointer-events: none; }
   #cb-badge { transition: opacity 0.2s; }
 }
+
+/* A licence that constrains reuse is not a footnote — it borders the whole
+   credit block in warning colour so it cannot be skimmed past. */
+.credit.has-license { border-left-color: var(--warn); }
+.credit-lic {
+  display: flex; flex-direction: column; gap: 3px;
+  margin-top: 7px; padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.credit-lic a {
+  font-family: var(--mono); font-size: 10px; color: var(--warn);
+  letter-spacing: 0.04em;
+}
+.credit-lic a:hover { border-bottom-color: var(--warn); }
+.credit-lic span { font-size: 10.5px; line-height: 1.45; color: var(--warn); opacity: 0.85; }

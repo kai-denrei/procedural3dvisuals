@@ -5,9 +5,15 @@ sine domain-warping, and singularity-driven emission — built to author effects
 drop into a **three.js r160, no-build, vanilla ES modules** project.
 
 Effects: a replication of XorDev's **Coronal**, a **wormhole / portal travel**
-effect derived from the same technique, **Metal Grid Flow** (an iridescent foil,
-after *harsh* and *koncreate*), and **Melting Jelly** (SDF raymarching with
-refraction, after *noztol*). See `ATTRIBUTIONS.md`.
+effect derived from the same technique, **Metal Grid Flow** (iridescent foil,
+after *harsh* and *koncreate*), **Melting Jelly** (SDF raymarching with
+refraction, after *noztol*), **Motion Cube** (a cube unfolding into its net,
+after *Jaenam*), and **SDF Primitives** (12 morphable primitives, original).
+
+> **Licences differ per effect.** Motion Cube is **CC BY-NC-SA 4.0** —
+> non-commercial only, share-alike. SDF Primitives is original and
+> unencumbered. The rest were published without stated terms. See
+> **[`ATTRIBUTIONS.md`](ATTRIBUTIONS.md)** before shipping any of them.
 
 ## Run
 
@@ -112,6 +118,8 @@ shaders/
   wormhole.frag       portal travel
   metal-grid-flow.frag  iridescent foil (attributed)
   melting-jelly.frag    SDF raymarch + refraction (attributed)
+  motion-cube.frag      unfolding cube (attributed — CC BY-NC-SA 4.0)
+  sdf-primitives.frag   12 primitives, morph + open (original, unencumbered)
 docs/PORTING.md       how to move an effect into the r160 target project
 docs/BOSS-ANIMATION.md  assessment: reusing these in spherical-stalberg-grid
 ATTRIBUTIONS.md       credit for borrowed work

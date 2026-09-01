@@ -24,6 +24,12 @@ uniform float uTimeScale;
 // ── Xor / fragcoord.xyz dialect ─────────────────────────────────────────────
 // Aliases so golfed source from fragcoord.xyz pastes in near-verbatim.
 // Use these when transcribing; use the long forms when writing new code.
+//
+// CAUTION: these are preprocessor text substitutions, not scoped names. Any
+// identifier called `f`, `len` or `nor` — including a function PARAMETER — gets
+// rewritten. `vec3 hash3f(vec3 f)` becomes `vec3 hash3f(vec3 float)` and fails
+// to compile with a syntax error pointing at the wrong token. This has already
+// cost one debugging session; see shaders/motion-cube.frag.
 #define f   float
 #define f2  vec2
 #define f3  vec3

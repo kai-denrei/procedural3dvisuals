@@ -110,8 +110,14 @@ function creditHeader(effectName) {
   const c = EFFECTS[effectName]?.credit;
   if (!c) return '';
   const via = (c.via ?? []).map((v) => `//   via: ${v.label} — ${v.url}`).join('\n');
-  return `// ${EFFECTS[effectName].label}\n//   origin: ${c.origin}\n${via}\n`
-       + (c.note ? `//   note: ${c.note}\n` : '') + '//\n';
+  // SPDX first, so licence scanners and humans both see it on line 1.
+  const spdx = c.license ? `// SPDX-License-Identifier: ${c.license.id}\n` : '';
+  const lic = c.license
+    ? `//   LICENCE: ${c.license.id} — ${c.license.url}\n`
+      + (c.license.warn ? `//   ${c.license.warn}\n` : '')
+    : '';
+  return spdx + `// ${EFFECTS[effectName].label}\n//   origin: ${c.origin}\n${via}\n`
+       + lic + (c.note ? `//   note: ${c.note}\n` : '') + '//\n';
 }
 
 // ── 4. Self-contained HTML ──────────────────────────────────────────────────
@@ -145,8 +151,12 @@ export function exportStandaloneHTML(effectName, resolvedSource, uniforms) {
              .replace(/^\s*uniform\s+float\s+uTimeScale\s*;.*$/gm, '');
 
   const creditHTML = c
-    ? `<!--\n  ${spec.label}\n  origin: ${c.origin}\n`
+    ? `<!--\n`
+      + (c.license ? `  SPDX-License-Identifier: ${c.license.id}\n` : '')
+      + `  ${spec.label}\n  origin: ${c.origin}\n`
       + (c.via ?? []).map((v) => `  via: ${v.label} — ${v.url}\n`).join('')
+      + (c.license ? `  LICENCE: ${c.license.id} — ${c.license.url}\n`
+                     + (c.license.warn ? `  ${c.license.warn}\n` : '') : '')
       + (c.note ? `  note: ${c.note}\n` : '')
       + `  exported from procedural3dvisuals\n-->`
     : '';

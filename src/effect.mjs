@@ -60,6 +60,39 @@ export async function buildEffect(name, { outputTransform = false } = {}) {
   return { material, spec };
 }
 
+/**
+ * Did the material's program actually link?
+ *
+ * renderer.compile() logs a compile failure to the console and returns
+ * normally, so a broken shader otherwise reports "ok" and renders black — the
+ * worst failure mode, because it looks like a shader bug rather than a build
+ * error. Ask the GL program directly.
+ */
+export function assertLinked(renderer, material) {
+  const gl = renderer.getContext();
+  const program = renderer.properties.get(material)?.currentProgram?.program;
+  if (!program) return;                       // not compiled yet — nothing to assert
+  if (gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+
+  // The program log only says "fragment shader is not compiled". The useful
+  // message — file, line, and the offending token — lives on the SHADER.
+  let detail = gl.getProgramInfoLog(program) || '';
+  for (const sh of gl.getAttachedShaders(program) ?? []) {
+    if (gl.getShaderParameter(sh, gl.COMPILE_STATUS)) continue;
+    const log = (gl.getShaderInfoLog(sh) || '').trim();
+    const src = gl.getShaderSource(sh) || '';
+    const lines = src.split('\n');
+    // Quote the line each ERROR: 0:<n> points at. three.js prefixes ~40 lines
+    // of injected #define, so a raw line number is not findable by hand.
+    const quoted = log.replace(/ERROR:\s*\d+:(\d+)/g, (m, n) => {
+      const i = parseInt(n, 10) - 1;
+      return `${m}  →  ${(lines[i] ?? '(out of range)').trim()}`;
+    });
+    detail += `\n${quoted}`;
+  }
+  throw new Error(`shader failed to link:\n${detail.trim()}`);
+}
+
 /** Re-annotate a WebGL compile log against our own source lines. */
 export function explainCompileError(material, log) {
   return annotateError(String(log), material.userData.sourceForErrors ?? '');
