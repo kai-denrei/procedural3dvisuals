@@ -30,6 +30,11 @@ export const EFFECTS = {
     label: 'Corona',
     note: "XorDev's 'Coronal', un-golfed. Ring singularity + sine turbulence.",
     frag: 'shaders/corona.frag',
+    credit: {
+      origin: 'XorDev — "Coronal"',
+      via: [{ label: 'fragcoord.xyz', url: 'https://fragcoord.xyz' }],
+      note: 'Un-golfed and parameterised from the published listing.',
+    },
     params: {
       ...CORE,
       uRingRadius: P(1.0, 0.1, 3.0, 0.01, 'Ring radius', 'Radius of the unit cylinder the ray grazes.'),
@@ -40,6 +45,11 @@ export const EFFECTS = {
     label: 'Corona (golfed)',
     note: 'Verbatim dialect transcription. Must match Corona exactly at defaults.',
     frag: 'shaders/corona-golfed.frag',
+    credit: {
+      origin: 'XorDev — "Coronal"',
+      via: [{ label: 'fragcoord.xyz', url: 'https://fragcoord.xyz' }],
+      note: 'Near-verbatim transcription of the original golfed listing.',
+    },
     params: {},           // hard-coded constants — that is the point of this entry
   },
 
@@ -47,6 +57,11 @@ export const EFFECTS = {
     label: 'Wormhole',
     note: 'Portal travel: moving camera + depth twist + depth-keyed hue.',
     frag: 'shaders/wormhole.frag',
+    credit: {
+      origin: 'Original, by this project',
+      via: [{ label: "derived from XorDev's turbulence technique", url: 'https://fragcoord.xyz' }],
+      note: 'Same raymarch + singularity machine as Corona, retargeted to a tunnel.',
+    },
     params: {
       ...CORE,
       uExposure:     P(150.0, 2.0, 600.0, 1.0, 'Exposure', 'tanh divisor. Lower = brighter/flatter. Wormhole needs ~3x Corona: nearly every ray crosses the throat, so far more rays hit the singularity.'),
@@ -58,6 +73,35 @@ export const EFFECTS = {
       uDepthHue:     P(0.12, -1.5, 1.5, 0.005, 'Hue / depth', 'Colour drift from mouth to vanishing point.'),
       uMinStep:      P(0.02, 0.0, 0.3, 0.001, 'Min step', 'March floor. 0 stalls the march at the wall.'),
       uNear:         P(1.5, 0.05, 4.0, 0.01, 'Near', 'Ray start distance. Below ~1.2 the throat crossing moves off-screen and the rim floods the whole frame instead of forming a ring.'),
+    },
+  },
+
+  'metal-grid-flow': {
+    label: 'Metal Grid Flow',
+    note: 'Iridescent foil: 2D grid + radial wave + polar sweep. No raymarch.',
+    frag: 'shaders/metal-grid-flow.frag',
+    credit: {
+      origin: 'harsh — Shadertoy "dtKfDD"',
+      via: [
+        { label: 'Shadertoy original', url: 'https://www.shadertoy.com/view/dtKfDD' },
+        { label: 'fragcoord port by koncreate (Kong)', url: 'https://fragcoord.xyz/s/gt8966nk' },
+      ],
+      note: 'Structure and constants unchanged; parameterised and adapted to this uniform contract.',
+    },
+    params: {
+      uIterations:  I(4, 1, 8, 'Iterations', 'Channels are written for the first 3. The 4th still advances z and l, which the final divide uses — see the shader header.'),
+      uZSpeed:      P(1.0, -4.0, 4.0, 0.01, 'Time scale', 'Overall animation rate. Negative runs the sheen backwards.'),
+      uZStep:       P(0.05, 0.0, 0.6, 0.001, 'Channel offset', 'Time offset per colour channel. THIS is the iridescence — at 0 the foil turns monochrome.'),
+      uGridFreq:    P(30.0, 2.0, 90.0, 0.5, 'Grid frequency', 'Cell density of the sin*cos lattice.'),
+      uGridAmp:     P(0.65, 0.0, 2.0, 0.01, 'Grid amount', 'Distortion strength. 0 leaves clean concentric cells.'),
+      uGridPhase:   P(25.0, 0.0, 60.0, 0.1, 'Grid phase', 'Offset between the x and y lattice terms; shifts the weave.'),
+      uWaveFreq:    P(7.0, 0.0, 30.0, 0.05, 'Wave frequency', 'Radial ring density.'),
+      uWaveSpeed:   P(1.0, -4.0, 4.0, 0.01, 'Wave speed', 'Rate the rings travel outward.'),
+      uPolarScale:  P(3.0, 0.0, 12.0, 0.05, 'Polar scale', 'How fast angular frequency grows with radius. The swept, brushed-metal look.'),
+      uBrightness:  P(0.033, 0.001, 0.3, 0.001, 'Brightness', 'Numerator of the 1/distance emission.'),
+      uFalloff:     P(0.5, 0.01, 4.0, 0.01, 'Falloff', 'The +0.5 in c/(l+0.5). Lower blows out the near field.'),
+      uCenterX:     P(0.5, -1.0, 2.0, 0.01, 'Centre X', 'Origin of the radial field, in normalised units.'),
+      uCenterY:     P(1.0, -1.0, 2.0, 0.01, 'Centre Y', 'Default 1.0 puts the origin off the top edge — that asymmetry is why the sheen sweeps rather than radiating from the middle.'),
     },
   },
 };

@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { EFFECTS } from './registry.mjs';
+import { copyLink, copyParams, exportParamsJSON, exportFrag, exportStandaloneHTML } from './export.mjs';
 
 const fmt = (v, step) => {
   if (Number.isInteger(step) && step >= 1) return String(Math.round(v));
@@ -12,9 +13,22 @@ const fmt = (v, step) => {
   return v.toFixed(step >= 0.01 ? 2 : 3);
 };
 
-export function buildUI(spec, material, state, reload) {
+export function buildUI(spec, material, state, reload, ctx = {}) {
   const panel = document.getElementById('panel');
   panel.innerHTML = '';
+
+  // ── attribution ───────────────────────────────────────────────────────────
+  // Credit lives in the registry so it travels with the effect into exports and
+  // embeds, rather than sitting only in a README nobody copies.
+  if (spec.credit) {
+    const box = el('div', { class: 'credit' });
+    box.append(el('span', { class: 'credit-origin' }, spec.credit.origin));
+    for (const v of spec.credit.via ?? []) {
+      box.append(el('a', { href: v.url, target: '_blank', rel: 'noopener noreferrer' }, v.label));
+    }
+    if (spec.credit.note) box.append(el('small', {}, spec.credit.note));
+    panel.append(box);
+  }
 
   // ── effect switcher ───────────────────────────────────────────────────────
   const sel = el('select', { id: 'fx-select' });
@@ -72,8 +86,43 @@ export function buildUI(spec, material, state, reload) {
   rl.onclick = () => reload(sel.value);
 
   panel.append(el('div', { class: 'actions' }, reset, rl));
+
+  // ── export ────────────────────────────────────────────────────────────────
+  panel.append(el('h2', { class: 'group' }, 'Export'));
+  const key = ctx.effectName ?? sel.value;
+  const u = material.uniforms;
+
+  const flash = (btn, msg) => {
+    const original = btn.textContent;
+    btn.textContent = msg;
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('ok'); }, 1400);
+  };
+
+  const mk = (label, help, fn) => {
+    const b = el('button', {}, label);
+    b.onclick = async () => {
+      try { const r = await fn(b); flash(b, r === false ? 'Failed' : 'Done'); }
+      catch (err) { console.error('[export]', err); flash(b, 'Failed'); }
+    };
+    return el('div', { class: 'exp-row' }, b, el('small', {}, help));
+  };
+
+  panel.append(
+    mk('Copy deeplink', 'URL with every non-default value. Short, readable, hand-editable.',
+       () => copyLink(key, u)),
+    mk('Copy variables', 'JSON snapshot of the current values, with credit and a permalink.',
+       () => copyParams(key, u)),
+    mk('Download JSON', 'Same snapshot as a file. Frozen — unlike a deeplink, it will not follow future default changes.',
+       () => { exportParamsJSON(key, u); }),
+    mk('Download .frag', 'Shader with #includes resolved and a credit header. Paste into any GLSL host.',
+       () => { exportFrag(key, ctx.source ?? material.userData.sourceForErrors ?? ''); }),
+    mk('Download standalone .html', 'One self-contained file: raw WebGL2, no three.js, no build, no network. Current values baked in.',
+       () => { exportStandaloneHTML(key, ctx.source ?? material.userData.sourceForErrors ?? '', u); }),
+  );
+
   panel.append(el('p', { class: 'keys' },
-    'space pause · r restart · h hide UI · s save PNG'));
+    'space pause · r restart · h hide UI · f fullscreen · s save PNG'));
 }
 
 // ── tiny DOM helpers ────────────────────────────────────────────────────────

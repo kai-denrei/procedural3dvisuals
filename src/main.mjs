@@ -8,6 +8,8 @@ import { buildEffect, fullscreenTriangle, explainCompileError } from './effect.m
 import { buildUI } from './ui.mjs';
 import { bustToken } from './shader-loader.mjs';
 import { registerSW, initFullscreen, initImmersive, initWakeLock, initInstall, standalone } from './pwa.mjs';
+import { decodeState, applyParams, syncURL } from './permalink.mjs';
+import { exportPNG } from './export.mjs';
 
 const canvas = document.getElementById('gl');
 
@@ -28,8 +30,11 @@ const geometry = fullscreenTriangle();
 
 let mesh = null;
 let current = null;                          // { material, spec }
-let effectName = new URLSearchParams(location.search).get('fx') || DEFAULT_EFFECT;
-if (!EFFECTS[effectName]) effectName = DEFAULT_EFFECT;
+const bootState = decodeState();
+let effectName = bootState.effectName ?? DEFAULT_EFFECT;
+// Param overrides from the URL apply to the FIRST load only. Switching effects
+// afterwards should give you that effect's defaults, not another effect's.
+let pendingParams = bootState.params;
 
 const state = {
   paused: false,
@@ -57,14 +62,19 @@ async function load(name) {
     resize();
     renderer.compile(scene, camera);         // surface compile errors now, not on frame 1
 
-    buildUI(built.spec, built.material, state, load);
+    const applied = applyParams(built.material.uniforms, pendingParams);
+    pendingParams = {};                       // first load only
+
+    buildUI(built.spec, built.material, state, load, {
+      effectName: name,
+      source: built.material.userData.sourceForErrors,
+    });
     document.getElementById('note').textContent = built.spec.note;
     status.textContent = `${built.spec.label} · v${bustToken()}`;
     status.className = 'ok';
+    if (applied.length) console.info(`[fx] applied ${applied.length} param(s) from URL:`, applied.join(', '));
 
-    const url = new URL(location.href);
-    url.searchParams.set('fx', name);
-    history.replaceState(null, '', url);
+    syncURL(name, built.material.uniforms);
   } catch (err) {
     status.textContent = 'FAILED — see console';
     status.className = 'err';
@@ -116,20 +126,11 @@ addEventListener('keydown', (e) => {
   if (e.key === 's') { savePNG(); }
 });
 
-function savePNG() {
-  renderer.render(scene, camera);            // ensure buffer is fresh before read
-  canvas.toBlob((blob) => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${effectName}-${Date.now()}.png`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-}
+function savePNG() { exportPNG(renderer, scene, camera, effectName); }
 
 // ── Frame loop ──────────────────────────────────────────────────────────────
 let last = performance.now();
-let fpsAcc = 0, fpsN = 0;
+let fpsAcc = 0, fpsN = 0, urlAcc = 0;
 
 function frame(now) {
   requestAnimationFrame(frame);
@@ -144,6 +145,11 @@ function frame(now) {
   u.uMouse.value.copy(state.mouse);
 
   renderer.render(scene, camera);
+
+  // Keep the address bar current so the URL is always copy-able, but rewrite at
+  // most twice a second — replaceState on every frame is a measurable cost.
+  urlAcc += dt;
+  if (urlAcc >= 0.5) { urlAcc = 0; if (current) syncURL(effectName, current.material.uniforms); }
 
   fpsAcc += dt; fpsN++;
   if (fpsAcc >= 0.5) {
