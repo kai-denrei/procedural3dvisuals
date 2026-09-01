@@ -31,6 +31,7 @@ const TYPES = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.png': 'image/png',
@@ -41,6 +42,9 @@ const TYPES = {
 };
 
 function cacheHeader(pathname, hasVersion) {
+  // sw.js must always revalidate: a cached service worker cannot be replaced
+  // by a new one, so it would pin users to an old build permanently.
+  if (pathname.endsWith('/sw.js')) return 'no-cache';
   if (!PROD) return 'no-store';
   if (hasVersion) return 'public, max-age=31536000, immutable';
   return 'no-cache';

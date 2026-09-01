@@ -2,20 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Procedural 3D Visuals — shader sandbox</title>
 
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
 
-<link rel="stylesheet" href="./src/style.css?v=61971fc0">
+<!-- ── PWA ──────────────────────────────────────────────────────────────────
+     display:standalone is not cosmetic here: it removes Safari's edge-swipe
+     back/forward navigation, which is the one "native touch that switches the
+     screen" that CSS touch-action cannot suppress. -->
+<link rel="manifest" href="./manifest.webmanifest?v=ec1b3e0c">
+<meta name="theme-color" content="#07080a">
+<meta name="color-scheme" content="dark">
+
+<!-- iOS: no beforeinstallprompt, no manifest theme honouring before Safari 15 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Visuals">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png?v=ec1b3e0c">
+
+<link rel="stylesheet" href="./src/style.css?v=ec1b3e0c">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="61971fc0">
-  <link rel="icon" type="image/svg+xml" href="./public/cb-shapes/33.svg?v=61971fc0">
-  <script src="./public/cb-badge.js?v=61971fc0" defer></script>
+  <meta name="cb" content="ec1b3e0c">
+  <link rel="icon" type="image/svg+xml" href="./public/cb-shapes/44.svg?v=ec1b3e0c">
+  <script src="./public/cb-badge.js?v=ec1b3e0c" defer></script>
 </head>
 <body>
 
@@ -36,6 +50,21 @@
   </footer>
 </aside>
 
-<script type="module" src="./src/main.mjs?v=61971fc0"></script>
+<div id="fab">
+  <button id="btn-ui" aria-pressed="false" aria-label="Hide controls" title="Hide controls (h)">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+  </button>
+  <button id="btn-fs" aria-pressed="false" aria-label="Fullscreen" title="Fullscreen (f)">
+    <svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<div id="toast" role="status" aria-live="polite">
+  <span id="toast-msg">A new version is available.</span>
+  <button id="toast-reload">Reload</button>
+  <button id="toast-dismiss" class="dismiss">Later</button>
+</div>
+
+<script type="module" src="./src/main.mjs?v=ec1b3e0c"></script>
 </body>
 </html>

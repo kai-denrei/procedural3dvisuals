@@ -7,6 +7,7 @@ import { EFFECTS, DEFAULT_EFFECT } from './registry.mjs';
 import { buildEffect, fullscreenTriangle, explainCompileError } from './effect.mjs';
 import { buildUI } from './ui.mjs';
 import { bustToken } from './shader-loader.mjs';
+import { registerSW, initFullscreen, initImmersive, initWakeLock, initInstall, standalone } from './pwa.mjs';
 
 const canvas = document.getElementById('gl');
 
@@ -84,20 +85,34 @@ function resize() {
   }
 }
 window.addEventListener('resize', resize);
+// visualViewport catches the iOS address bar collapsing, which changes the
+// usable height without firing a window resize.
+window.visualViewport?.addEventListener('resize', resize);
+screen.orientation?.addEventListener('change', () => setTimeout(resize, 120));
 
 // ── Input ───────────────────────────────────────────────────────────────────
-addEventListener('pointermove', (e) => {
+// Pointer input is bound to the CANVAS, not the window. Bound to the window it
+// also fired while dragging a slider — so adjusting a dial moved uMouse too.
+// { passive: true } because we never preventDefault here; touch-action:none in
+// the CSS already tells the browser we own the gesture.
+function pointerXY(e) {
   const dpr = renderer.getPixelRatio();
-  state.mouse.x = e.clientX * dpr;
-  state.mouse.y = (window.innerHeight - e.clientY) * dpr;   // GL origin is bottom-left
-});
-addEventListener('pointerdown', () => { state.mouse.z = state.mouse.x; state.mouse.w = state.mouse.y; });
+  const r = canvas.getBoundingClientRect();
+  return [(e.clientX - r.left) * dpr, (r.bottom - e.clientY) * dpr];  // GL origin is bottom-left
+}
+canvas.addEventListener('pointermove', (e) => {
+  [state.mouse.x, state.mouse.y] = pointerXY(e);
+}, { passive: true });
+canvas.addEventListener('pointerdown', (e) => {
+  [state.mouse.z, state.mouse.w] = pointerXY(e);
+}, { passive: true });
 
 addEventListener('keydown', (e) => {
   if (e.target.matches('input, select, textarea')) return;
   if (e.code === 'Space') { e.preventDefault(); state.paused = !state.paused; }
   if (e.key === 'r') { state.time = 0; }
-  if (e.key === 'h') { document.body.classList.toggle('hide-ui'); }
+  if (e.key === 'h') { immersive.toggle(); }
+  if (e.key === 'f') { fullscreen.toggle(); }
   if (e.key === 's') { savePNG(); }
 });
 
@@ -136,6 +151,14 @@ function frame(now) {
     fpsAcc = 0; fpsN = 0;
   }
 }
+
+// ── PWA / mobile layer ──────────────────────────────────────────────────────
+const immersive = initImmersive();
+const fullscreen = initFullscreen({ onChange: () => setTimeout(resize, 120) });
+initWakeLock();
+initInstall();
+registerSW();
+if (standalone()) document.body.classList.add('installed');
 
 // ── Go ──────────────────────────────────────────────────────────────────────
 load(effectName).then(() => requestAnimationFrame(frame));

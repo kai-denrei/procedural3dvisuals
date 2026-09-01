@@ -92,6 +92,21 @@ while IFS= read -r f; do
   fi
 done < <(walk_source_files)
 
+# ---------- 4. Rewrite the service-worker token (PWA cache invalidation) ----------
+# The SW's cache name is `p3dv-<token>`. Without this rewrite the SW keeps
+# serving the old cache forever and the bust never reaches installed users.
+# Added for this project; see .deban/roles/arch.md (no devops role exists).
+if [[ -f sw.js ]]; then
+  sed "${SED_INPLACE[@]}" -E "s/^const CB_TOKEN = \"[^\"]*\";/const CB_TOKEN = \"${TOKEN}\";/" sw.js
+  rm -f sw.js.cbbak
+  if grep -q "const CB_TOKEN = \"${TOKEN}\";" sw.js; then
+    [[ -z "$QUIET" ]] && echo "  ✓ service-worker cache → p3dv-${TOKEN}"
+  else
+    echo "  ✗ sw.js token rewrite FAILED — installed PWAs will serve a stale cache" >&2
+    exit 1
+  fi
+fi
+
 if [[ -z "$QUIET" ]]; then
   echo ""
   echo "🧛  cache bust complete — token ${TOKEN}"

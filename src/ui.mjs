@@ -91,8 +91,19 @@ function el(tag, attrs = {}, ...kids) {
 function row(label, input, out, help) {
   const r = el('div', { class: 'row' });
   r.append(el('label', {}, label));
-  const line = el('div', { class: 'line' }, input);
-  if (out) line.append(out);
+
+  // A checkbox gets wrapped in a <label> so the whole strip is a hit target.
+  // At 26px the switch itself is under the 44px touch minimum, and enlarging
+  // it would look clumsy — the label carries the area instead.
+  let line;
+  if (input.type === 'checkbox') {
+    const state = el('span', { class: 'switch-state' }, input.checked ? 'on' : 'off');
+    input.addEventListener('change', () => { state.textContent = input.checked ? 'on' : 'off'; });
+    line = el('label', { class: 'line switch' }, input, state);
+  } else {
+    line = el('div', { class: 'line' }, input);
+    if (out) line.append(out);
+  }
   r.append(line);
   if (help) r.append(el('small', {}, help));
   return r;
